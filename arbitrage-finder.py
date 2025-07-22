@@ -13,6 +13,9 @@ from lib.networkhandler import APIHandler, DiscordHandler
 from lib.betting_odds_database import BettingOddsDatabase as db
 from colorama import Fore, Back, Style
 
+import os
+print("Loaded ODDS_API_KEY:", os.getenv('ODDS_API_KEY'))
+
 if __name__ == "__main__":
     print(Back.MAGENTA + "       Welcome to the Arbitrage Finder!       " + Style.RESET_ALL)
     print(Fore.MAGENTA + "This program will find arbitrage opportunities for you." + Style.RESET_ALL +"\n")
@@ -57,3 +60,16 @@ if __name__ == "__main__":
         if bet_id:
             discord.send_bet_to_discord(bet, bet_id)
     print(Back.GREEN + Fore.BLACK + "Upload complete!" + Style.RESET_ALL + "\n")
+
+    print(Fore.YELLOW + "Exporting arbitrage opportunities to CSV..." + Style.RESET_ALL)
+    import csv
+    csv_file_path = 'data/arbitrage_output.csv'
+    if bets:
+        keys = bets[0].keys()
+        with open(csv_file_path, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows(bets)
+        print(Back.GREEN + Fore.BLACK + f"Arbitrage output saved to {csv_file_path}" + Style.RESET_ALL)
+    else:
+        print(Back.RED + "No arbitrage opportunities found to export." + Style.RESET_ALL)

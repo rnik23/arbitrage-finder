@@ -10,7 +10,7 @@ from datetime import datetime
 class BettingOddsDatabase:
     database = dict()
 
-    def __init__(self):
+    def __init__(self, ignore_bookmakers=None):
         self.database = {
             'americanfootball_cfl': dict(),
             'americanfootball_ncaaf': dict(),
@@ -104,9 +104,10 @@ class BettingOddsDatabase:
             'tennis_wta_us_open': dict(),
             'tennis_wta_wimbledon': dict()
         }
+        self.ignore_bookmakers = set(ignore_bookmakers) if ignore_bookmakers else set()
 
     @staticmethod
-    def initialize_market(match, current_market, odds):
+    def initialize_market(match, current_market, odds, ignore_bookmakers=None):
         # Define sport that don't have a draw
         no_draw_sports = ['americanfootball','baseball','icehockey','basketball','golf','tennis','mma','cricket']
 
@@ -154,6 +155,8 @@ class BettingOddsDatabase:
             self.database[match['sport_key']][match['id']] = {'home_team': match['home_team'], 'away_team': match['away_team'], 'time':datetime.strptime(match['commence_time'], "%Y-%m-%dT%H:%M:%SZ").timestamp(), 'markets': dict()}
             for bookmaker in match['bookmakers']:
                 current_bookmaker = bookmaker['title']
+                if current_bookmaker in self.ignore_bookmakers:
+                    continue
                 for odds in bookmaker['markets']:
                     current_market = odds['key']
                     if current_market == 'spreads':

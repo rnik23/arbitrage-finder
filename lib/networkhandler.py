@@ -12,7 +12,7 @@ class OddsAPIHandler:
 
     SPORT = 'soccer_usa_mls' # use the sport_key from the /sports endpoint below, or use 'upcoming' to see the next 8 games across all sports
 
-    REGIONS = 'uk' # uk | us | eu | au. Multiple can be specified if comma delimited
+    REGIONS = 'us' # uk | us | eu | au. Multiple can be specified if comma delimited
 
     MARKETS = 'h2h,totals' # h2h | spreads | totals. Multiple can be specified if comma delimited
 
@@ -133,47 +133,59 @@ class DiscordHandler:
         )
 
     def send_bet_to_discord(self, bet: dict, bet_id: str) -> None :
-
+        number = bet.get('discord_number', '')
         sport = bet['sport']
-        time = bet['time']
+        time = bet.get('est_time', bet['time'])
         home_team = bet['home_team']
         away_team = bet['away_team']
-
         if bet['type'] == 'h2h':
             stakes = {'home': bet['home_stake'], 'away': bet['away_stake']}
             message = f"""
-    ## 💎 New Head 2 Head Opportunity 💎
+{number}) ## 💎 New Head 2 Head Opportunity 💎
 
-    **Sport:** {sport}
-    **Match:** {home_team} vs {away_team} at {time}
-    **Stakes:**
-        *Home:* Stake £{stakes['home']['stake']} with {stakes['home']['bookmaker']} @ {stakes['home']['price']}
-        *Away:* Stake £{stakes['away']['stake']} with {stakes['away']['bookmaker']} @ {stakes['away']['price']}
+**Sport:** {sport}
+**Match:** {home_team} (Home) vs {away_team} (Away) at {time}
+**Teams:**
+    Home: {home_team}
+    Away: {away_team}
+**Time:**
+    EST: {bet.get('est_time', time)}
+    Local: {bet.get('local_time', time)}
+    Status: {bet.get('game_status', '')}
+**Stakes:**
+    *Home:* Stake £{stakes['home']['stake']} with {stakes['home']['bookmaker']} @ {stakes['home']['price']} (American: {stakes['home'].get('american_odds', 'N/A')})
+    *Away:* Stake £{stakes['away']['stake']} with {stakes['away']['bookmaker']} @ {stakes['away']['price']} (American: {stakes['away'].get('american_odds', 'N/A')})
 
-    for a return of {bet['roi']}%
-    """.strip()
+for a return of {bet['roi']}%
+""".strip()
         elif bet['type'] == 'totals':
             stakes = {'over': bet['over_stake'], 'under': bet['under_stake']}
             message = f"""
-        ## 💎 New Totals Opportunity 💎
+{number}) ## 💎 New Totals Opportunity 💎
 
-        **Sport:** {sport}
-        **Match:** {home_team} vs {away_team} at {time}
-        **Stakes:**
-            *Over {stakes['over']['point']}:* Stake £{stakes['over']['stake']} with {stakes['over']['bookmaker']} @ {stakes['over']['price']}
-            *Under {stakes['under']['point']}:* Stake £{stakes['under']['stake']} with {stakes['under']['bookmaker']} @ {stakes['under']['price']}
+**Sport:** {sport}
+**Match:** {home_team} (Home) vs {away_team} (Away) at {time}
+**Teams:**
+    Home: {home_team}
+    Away: {away_team}
+**Time:**
+    EST: {bet.get('est_time', time)}
+    Local: {bet.get('local_time', time)}
+    Status: {bet.get('game_status', '')}
+**Stakes:**
+    *Over {stakes['over']['point']}:* Stake £{stakes['over']['stake']} with {stakes['over']['bookmaker']} @ {stakes['over']['price']} (American: {stakes['over'].get('american_odds', 'N/A')})
+    *Under {stakes['under']['point']}:* Stake £{stakes['under']['stake']} with {stakes['under']['bookmaker']} @ {stakes['under']['price']} (American: {stakes['under'].get('american_odds', 'N/A')})
 
-        for a return of {bet['roi']}%
-        """.strip()
+for a return of {bet['roi']}%
+""".strip()
         else:
             stakes = {}
             message = f"""
-        ## 💎 New Laybet Opportunity 💎
+{number}) ## 💎 New Laybet Opportunity 💎
 
-        **Sport:** {sport}
-        **Match:** {home_team} vs {away_team} at {time}
-        **Stakes:** """
-
+**Sport:** {sport}
+**Match:** {home_team} vs {away_team} at {time}
+**Stakes:** """
             if 'home_stake' in bet:
                 stakes['home'] = bet['home_stake']
                 message += f""" 

@@ -7,8 +7,9 @@ from colorama import Fore, Style
 # LICENSE file in the root directory of this source tree. 
 
 class ArbitrageFinder:
-    def __init__(self, database) -> None:
+    def __init__(self, database, lay_commission=0.05) -> None:
         self.database = database
+        self.lay_commission = lay_commission
 
     @staticmethod
     def run_arb_math(market: dict, market_name: str) -> dict:
@@ -52,6 +53,7 @@ class ArbitrageFinder:
                     return None
         
         elif market_name == 'totals':
+            arbitrage_points = []
             for point in market['overBest'].keys():
                 over_price = market['overBest'][point][0]
                 under_price = market['underBest'][point][0]
@@ -65,17 +67,14 @@ class ArbitrageFinder:
                 combined_margin = over_implied + under_implied
                 if (combined_margin) < 100:
                     print(Fore.GREEN + f'Opportunity found in {market_name} market' + Style.RESET_ALL)
-                    return {'over_stake': (100*over_implied)/combined_margin, 'under_stake': (100*under_implied)/combined_margin, 'roi': 100-combined_margin, 'point': point}
-                else:
-                    continue
-            return None
+                    arbitrage_points.append({'over_stake': (100*over_implied)/combined_margin, 'under_stake': (100*under_implied)/combined_margin, 'roi': 100-combined_margin, 'point': point})
+            return arbitrage_points if arbitrage_points else None
 
-    @staticmethod 
-    def run_arb_math_laybet(markets: dict, market_name: str) -> list:
+    def run_arb_math_laybet(self, markets: dict, market_name: str) -> list:
         odds = {'back':{'home': 0.0, 'away': 0.0, 'draw': 0.0}, 'lay':{'home': 0.0, 'away': 0.0, 'draw': 0.0}}
         stakes = {'back':{'home': 0.0, 'away': 0.0, 'draw': 0.0}, 'lay':{'home': 0.0, 'away': 0.0, 'draw': 0.0}}
-
         results = []
+        commission = self.lay_commission
 
         if market_name == 'h2h_lay':
             # Get the best backing and lay odds for each match
@@ -106,7 +105,7 @@ class ArbitrageFinder:
 
             if odds['back']['home'] != 0.0 and odds['lay']['home'] != 0.0 and odds['lay']['home'] < odds['back']['home'] and (1/(odds['back']['home'])) * 100 + (1/(odds['lay']['home'])) * 100 < 97:
                 stakes['back']['home'] = 100.0
-                stakes['lay']['home'] = (odds['back']['home'] * stakes['back']['home']) / (odds['lay']['home'] - 0.05)
+                stakes['lay']['home'] = (odds['back']['home'] * stakes['back']['home']) / (odds['lay']['home'] - commission)
                 profit = (odds['back']['home']-1) * stakes['back']['home'] - (odds['lay']['home']-1)*stakes['lay']['home']
                 if profit > 0:
                     print(Fore.GREEN + f'Opportunity found in {market_name} market' + Style.RESET_ALL)
@@ -114,7 +113,7 @@ class ArbitrageFinder:
 
             if odds['back']['away'] != 0.0 and odds['lay']['away'] != 0.0 and odds['lay']['away'] < odds['back']['away'] and (1/(odds['back']['away'])) * 100 + (1/(odds['lay']['away'])) * 100 < 97:
                 stakes['back']['away'] = 100.0
-                stakes['lay']['away'] = (odds['back']['away'] * stakes['back']['away']) / (odds['lay']['away'] - 0.05)
+                stakes['lay']['away'] = (odds['back']['away'] * stakes['back']['away']) / (odds['lay']['away'] - commission)
                 profit = (odds['back']['away']-1) * stakes['back']['away'] - (odds['lay']['away']-1)*stakes['lay']['away']
                 if profit > 0:
                     print(Fore.GREEN + f'Opportunity found in {market_name} market' + Style.RESET_ALL)
@@ -122,7 +121,7 @@ class ArbitrageFinder:
 
             if odds['back']['draw'] != 0.0 and odds['lay']['draw'] != 0.0 and odds['lay']['draw'] < odds['back']['draw'] and (1/(odds['back']['draw'])) * 100 + (1/(odds['lay']['draw'])) * 100 < 97:
                 stakes['back']['draw'] = 100.0
-                stakes['lay']['draw'] = (odds['back']['draw'] * stakes['back']['draw']) / (odds['lay']['draw'] - 0.05)
+                stakes['lay']['draw'] = (odds['back']['draw'] * stakes['back']['draw']) / (odds['lay']['draw'] - commission)
                 profit = (odds['back']['draw']-1) * stakes['back']['draw'] - (odds['lay']['draw']-1)*stakes['lay']['draw']
                 if profit > 0:
                     print(Fore.GREEN + f'Opportunity found in {market_name} market' + Style.RESET_ALL)
@@ -176,30 +175,30 @@ class ArbitrageFinder:
                     elif market == 'totals':
                         # Search for totals arbitrage opportunities
                         calculations = self.run_arb_math(self.database[sport][match]['markets'][market], market)
-                        if calculations != None:
-                            result = {
-                                'id': match,
-                                'sport': sport,
-                                'type': 'totals',
-                                'home_team': home_team,
-                                'away_team': away_team,
-                                'time': time,
-                                'roi': calculations['roi'],
-                                'over_stake': {
-                                    'bookmaker': self.database[sport][match]['markets'][market]['overBest'][calculations['point']][1],
-                                    'point': calculations['point'],
-                                    'price': self.database[sport][match]['markets'][market]['overBest'][calculations['point']][0],
-                                    'stake': calculations['over_stake']
-                                },
-                                'under_stake': {
-                                    'bookmaker': self.database[sport][match]['markets'][market]['underBest'][calculations['point']][1],
-                                    'point': calculations['point'],
-                                    'price': self.database[sport][match]['markets'][market]['underBest'][calculations['point']][0],
-                                    'stake': calculations['over_stake']
+                        if calculations:
+                            for calc in calculations:
+                                result = {
+                                    'id': match,
+                                    'sport': sport,
+                                    'type': 'totals',
+                                    'home_team': home_team,
+                                    'away_team': away_team,
+                                    'time': time,
+                                    'roi': calc['roi'],
+                                    'over_stake': {
+                                        'bookmaker': self.database[sport][match]['markets'][market]['overBest'][calc['point']][1],
+                                        'point': calc['point'],
+                                        'price': self.database[sport][match]['markets'][market]['overBest'][calc['point']][0],
+                                        'stake': calc['over_stake']
+                                    },
+                                    'under_stake': {
+                                        'bookmaker': self.database[sport][match]['markets'][market]['underBest'][calc['point']][1],
+                                        'point': calc['point'],
+                                        'price': self.database[sport][match]['markets'][market]['underBest'][calc['point']][0],
+                                        'stake': calc['under_stake']
+                                    }
                                 }
-                            }
-
-                            results.append(result)
+                                results.append(result)
 
                     elif market == 'h2h_lay':
                         # Search for laybet arbitrage opportunities

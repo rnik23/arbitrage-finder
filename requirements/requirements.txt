@@ -1,0 +1,6 @@
+# List all required Python packages for this project
+requests
+dotenv
+colorama
+pytz
+# Add other dependencies below as needed
