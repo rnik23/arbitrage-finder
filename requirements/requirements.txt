@@ -3,4 +3,7 @@ requests
 dotenv
 colorama
 pytz
+pytest
+beautifulsoup4
+tzlocal
 # Add other dependencies below as needed

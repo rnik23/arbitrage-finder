@@ -6,63 +6,72 @@ from colorama import Fore, Back, Style
 load_dotenv(find_dotenv('.env.local'))
 
 class OddsAPIHandler:
-    # An api key is emailed to you when you sign up to a plan
-    # Get a free API key at https://api.the-odds-api.com/
-    API_KEY = os.getenv('ODDS_API_KEY')
+    """
+    Handles fetching odds data from the Odds API with robust error handling and bookmaker filtering.
+    """
+    def __init__(self, sport, regions='us', markets='h2h,totals', odds_format='decimal', date_format='iso', api_key=None):
+        self.api_key = api_key or os.getenv('ODDS_API_KEY')
+        self.sport = sport
+        self.regions = regions
+        self.markets = markets
+        self.odds_format = odds_format
+        self.date_format = date_format
 
-    SPORT = 'soccer_usa_mls' # use the sport_key from the /sports endpoint below, or use 'upcoming' to see the next 8 games across all sports
+    def fetch_from_api(self, max_retries=3, timeout=10, bookmaker_filter=None):
+        """
+        Fetch odds from the Odds API, retrying on failure and filtering bookmakers if specified.
+        Returns a list of valid events with odds data.
+        """
+        print(Fore.YELLOW + f'Getting the {self.sport} odds from API...' + Style.RESET_ALL)
+        url = f'https://api.the-odds-api.com/v4/sports/{self.sport}/odds'
+        params = {
+            'api_key': self.api_key,
+            'regions': self.regions,
+            'markets': self.markets,
+            'oddsFormat': self.odds_format,
+            'dateFormat': self.date_format,
+        }
+        odds_json = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = requests.get(url, params=params, timeout=timeout)
+                if response.status_code == 200:
+                    odds_json = response.json()
+                    print(Fore.GREEN + f'Received {len(odds_json)} events from Odds API.' + Style.RESET_ALL)
+                    print(f'Remaining requests: {response.headers.get("x-requests-remaining")}, Used: {response.headers.get("x-requests-used")}')
+                    break
+                else:
+                    print(Back.RED + f'Attempt {attempt}: API error {response.status_code}: {response.text}' + Style.RESET_ALL)
+            except requests.RequestException as e:
+                print(Back.RED + f'Attempt {attempt}: Network error: {e}' + Style.RESET_ALL)
+        if odds_json is None:
+            raise RuntimeError('Failed to fetch odds from API after multiple attempts.')
+        valid_events = []
+        for event in odds_json:
+            bookmakers = event.get('bookmakers', [])
+            if not bookmakers:
+                print(Back.RED + f"Event missing bookmakers: {event.get('id', 'unknown')}" + Style.RESET_ALL)
+                continue
+            if bookmaker_filter:
+                bookmakers = [b for b in bookmakers if b['title'] in bookmaker_filter]
+                event['bookmakers'] = bookmakers
+            if bookmakers:
+                valid_events.append(event)
+        if not valid_events:
+            print(Back.RED + 'No valid events with bookmakers found.' + Style.RESET_ALL)
+        return valid_events
 
-    REGIONS = 'us' # uk | us | eu | au. Multiple can be specified if comma delimited
-
-    MARKETS = 'h2h,totals' # h2h | spreads | totals. Multiple can be specified if comma delimited
-
-    ODDS_FORMAT = 'decimal' # decimal | american
-
-    DATE_FORMAT = 'iso' # iso | unix
-
-    def __init__(self, sport, markets = 'h2h,totals', odds_format = 'decimal', date_format = 'iso'):
-        self.SPORT = sport
-        self.MARKETS = markets
-        self.ODDS_FORMAT = odds_format
-        self.DATE_FORMAT = date_format
-
-    def fetchFromAPI(self):
-        print(Fore.YELLOW + f'Getting the {self.SPORT} odds from API...' + Style.RESET_ALL)
-
-        odds_response = requests.get(f'https://api.the-odds-api.com/v4/sports/{self.SPORT}/odds', params={
-            'api_key': self.API_KEY,
-            'regions': self.REGIONS,
-            'markets': self.MARKETS,
-            'oddsFormat': self.ODDS_FORMAT,
-            'dateFormat': self.DATE_FORMAT,
-        })
-
-        if odds_response.status_code != 200:
-            print(Back.RED + f'Failed to get odds: status_code {odds_response.status_code}, response body {odds_response.text}' + Style.RESET_ALL)
-
-        else:
-            odds_json = odds_response.json()
-            print(Fore.GREEN + 'Number of events received:', len(odds_json))
-            print(Style.RESET_ALL)
-
-            # Update the usage quota
-            print('Remaining requests', odds_response.headers['x-requests-remaining'])
-            print('Used requests', odds_response.headers['x-requests-used'])
-        
-        return odds_json
-    
     def print_quota(self):
-        response = requests.get('https://api.the-odds-api.com/v4/sports', params={
-            'api_key': self.API_KEY
-        })
-
-        if response.status_code != 200:
-            print(Back.RED + f'Failed to get quota: status_code {response.status_code}, response body {response.text}' + Style.RESET_ALL)
-
+        """
+        Print the current API quota usage.
+        """
+        url = 'https://api.the-odds-api.com/v4/sports'
+        params = {'api_key': self.api_key}
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            print(f'Remaining requests: {response.headers.get("x-requests-remaining")}, Used: {response.headers.get("x-requests-used")}')
         else:
-            # Print the usage quota
-            print('Remaining requests', response.headers['x-requests-remaining'])
-            print('Used requests', response.headers['x-requests-used'])
+            print(Back.RED + f'Failed to get quota: {response.status_code} {response.text}' + Style.RESET_ALL)
     
 class APIHandler:
 

@@ -1,0 +1,40 @@
+{
+  "id": "evt_123456",
+  "sport": "basketball",
+  "region": "us",
+  "league": "NBA",
+  "commence_time": 1753142400,
+  "home_team": "Los Angeles Lakers",
+  "away_team": "Golden State Warriors",
+  "bookmakers": [
+    {
+      "key": "fanduel",
+      "title": "FanDuel",
+      "last_update": 1753138800,
+      "markets": [
+        {
+          "key": "h2h",
+          "outcomes": [
+            {"name": "Los Angeles Lakers", "price": 1.85, "odds_american": "-118"},
+            {"name": "Golden State Warriors", "price": 2.05, "odds_american": "+105"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "draftkings",
+      "title": "DraftKings",
+      "last_update": 1753138800,
+      "markets": [
+        {
+          "key": "h2h",
+          "outcomes": [
+            {"name": "Los Angeles Lakers", "price": 1.90, "odds_american": "-111"},
+            {"name": "Golden State Warriors", "price": 2.00, "odds_american": "+100"}
+          ]
+        }
+      ]
+    }
+  ],
+  "status": "future"
+}

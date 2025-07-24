@@ -16,12 +16,24 @@ if __name__ == "__main__":
     parser.add_argument('--sport', type=str, required=True, help='Sport key (e.g., soccer_usa_mls, basketball_nba)')
     parser.add_argument('--show-metadata', action='store_true', help='Show metadata for odds API calls')
     parser.add_argument('--game-status', type=str, choices=['live', 'future', 'all'], default='all', help='Filter arbitrage for live, future, or all games')
+    parser.add_argument('--include-bookmakers', type=str, nargs='+', help='Only include these bookmakers (e.g., --include-bookmakers "DraftKings" "FanDuel")')
+    parser.add_argument('--exclude-bookmakers', type=str, nargs='+', help='Exclude these bookmakers (e.g., --exclude-bookmakers "Bovada" "MyBookie.ag")')
     args = parser.parse_args()
 
     print(Back.MAGENTA + "       Welcome to the Arbitrage Finder!       " + Style.RESET_ALL)
     print(Fore.MAGENTA + f"This program will find arbitrage opportunities for {args.sport}." + Style.RESET_ALL +"\n")
 
-    odds_workflow = OddsWorkflow(sport=args.sport)
+    # Clear odds and metadata files before each run
+    with open('data/odds/all_odds.json', 'w') as f:
+        f.write('')
+    with open('data/metadata/arbitrage_run_metadata.txt', 'w') as f:
+        f.write('')
+
+    odds_workflow = OddsWorkflow(
+        sport=args.sport, 
+        include_bookmakers=args.include_bookmakers,
+        exclude_bookmakers=args.exclude_bookmakers
+    )
     odds_workflow.fetch_and_format_odds(show_metadata=args.show_metadata)
     print(Back.GREEN + Fore.BLACK + "Formatting complete!" + Style.RESET_ALL + "\n")
 
@@ -63,6 +75,14 @@ if __name__ == "__main__":
             print(f"DEBUG: No time found for bet id={bet.get('id', 'N/A')}")
             if args.game_status == 'all':
                 filtered_bets.append(bet)
+
+    # Further filter bets by included and excluded bookmakers, if specified
+    if args.include_bookmakers:
+        print(f"DEBUG: Including only these bookmakers: {args.include_bookmakers}")
+        filtered_bets = [bet for bet in filtered_bets if bet.get('bookmaker') in args.include_bookmakers]
+    if args.exclude_bookmakers:
+        print(f"DEBUG: Excluding these bookmakers: {args.exclude_bookmakers}")
+        filtered_bets = [bet for bet in filtered_bets if bet.get('bookmaker') not in args.exclude_bookmakers]
 
     upload_workflow = UploadWorkflow()
     upload_workflow.upload_bets(filtered_bets)

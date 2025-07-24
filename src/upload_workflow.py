@@ -11,9 +11,10 @@ class UploadWorkflow:
         self.discord = DiscordHandler()
 
     def upload_bets(self, bets):
-        csv_file_path = 'odds/arbitrage_bets.csv'
-        metadata_file = 'data/arbitrage_metadata.txt'
-        # Use user's local timezone
+        # Updated paths for new data structure
+        csv_file_path = 'data/arbs/arbitrage_output.csv'
+        metadata_file = 'data/metadata/arbitrage_run_metadata.txt'
+        json_file_path = 'data/arbs/all_arbs.json'
         import tzlocal
         local_tz = tzlocal.get_localzone()
         est = pytz.timezone('US/Eastern')
@@ -59,6 +60,10 @@ class UploadWorkflow:
                 writer.writeheader()
                 writer.writerows(bets)
             print(f"Arbitrage bets saved to {csv_file_path}")
+            # Save all bets to JSON for analysis/debugging
+            with open(json_file_path, 'w') as jsonfile:
+                json.dump(bets, jsonfile, indent=2)
+            print(f"All arbitrage bets saved to {json_file_path}")
             # Optionally send to Discord
             for idx, bet in enumerate(bets, start=1):
                 # Format timestamp for Discord

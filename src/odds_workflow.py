@@ -8,9 +8,20 @@ import pytz
 from datetime import datetime
 
 class OddsWorkflow:
-    def __init__(self, sport='basketball_nba'):
+    def __init__(self, sport='basketball_nba', include_bookmakers=None, exclude_bookmakers=None):
         self.odds_api = OddsAPIHandler(sport)
-        self.database = BettingOddsDatabase(ignore_bookmakers={'Bovada'})
+        
+        # Handle bookmaker filtering logic
+        if include_bookmakers:
+            # Include-only mode: only analyze specified bookmakers
+            self.database = BettingOddsDatabase(include_bookmakers=set(include_bookmakers))
+        elif exclude_bookmakers:
+            # Exclude mode: analyze all except specified bookmakers
+            self.database = BettingOddsDatabase(ignore_bookmakers=set(exclude_bookmakers))
+        else:
+            # Default: exclude Bovada only
+            self.database = BettingOddsDatabase(ignore_bookmakers={'Bovada'})
+        
         self.sport = sport
 
     @staticmethod
@@ -21,15 +32,20 @@ class OddsWorkflow:
             return f"-{int(100 / (decimal_odds - 1))}"
 
     def fetch_and_format_odds(self, show_metadata=False):
+        print("DEBUG: Starting odds fetch and format workflow...")
         # Fetch odds for the specified sport and save to odds folder
-        odds_data = self.odds_api.fetchFromAPI()
+        odds_data = self.odds_api.fetch_from_api()
+        print(f"DEBUG: Odds data fetched, events count: {len(odds_data)}")
         odds_file = f'odds/{self.sport}.json'
         with open(odds_file, 'w') as output:
             json.dump(odds_data, output)
+        print(f"DEBUG: Odds data written to {odds_file}")
         # Format the newly created odds file
         self.database.formatJSON(odds_file)
+        print(f"DEBUG: Odds data formatted by BettingOddsDatabase")
         with open('data/all_odds.json', 'w') as outfile:
             json.dump(self.database.database, outfile, indent=4)
+        print("DEBUG: Formatted odds written to data/all_odds.json")
         if show_metadata:
             metadata_file = f'data/{self.sport}_metadata.txt'
             est = pytz.timezone('US/Eastern')
