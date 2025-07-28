@@ -1,0 +1,29 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: arbitrage_finder
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: arbitrage_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Arbitrage Finder Application
+  arbitrage-finder:
+    build: .
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=arbitrage_finder
+      - DB_USER=arbitrage_user
+      - DB_PASSWORD=arbitrage_password
+
+volumes:
+  postgres_data:

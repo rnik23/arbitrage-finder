@@ -1,0 +1,12 @@
+# Cron schedule for arbitrage finder
+# Run every 15 minutes for high-frequency opportunities
+*/15 * * * * cd /app && python src/main.py --sport baseball_mlb --include-bookmakers "DraftKings" "FanDuel" "BetMGM" >> /var/log/cron.log 2>&1
+
+# Run WNBA every 30 minutes during season
+*/30 * * * * cd /app && python src/main.py --sport basketball_wnba --include-bookmakers "DraftKings" "FanDuel" "BetMGM" >> /var/log/cron.log 2>&1
+
+# Run NBA every hour during season (adjust seasonally)
+0 * * * * cd /app && python src/main.py --sport basketball_nba --include-bookmakers "DraftKings" "FanDuel" "BetMGM" >> /var/log/cron.log 2>&1
+
+# Run NFL every 2 hours during season (Sundays more frequent)
+0 */2 * * * cd /app && python src/main.py --sport americanfootball_nfl --include-bookmakers "DraftKings" "FanDuel" "BetMGM" >> /var/log/cron.log 2>&1

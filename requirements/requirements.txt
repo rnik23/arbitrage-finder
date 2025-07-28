@@ -1,9 +1,11 @@
 # List all required Python packages for this project
 requests
-dotenv
+python-dotenv
 colorama
 pytz
 pytest
 beautifulsoup4
 tzlocal
+psycopg2-binary
+schedule
 # Add other dependencies below as needed

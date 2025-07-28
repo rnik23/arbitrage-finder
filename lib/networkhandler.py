@@ -149,6 +149,10 @@ class DiscordHandler:
         away_team = bet['away_team']
         if bet['type'] == 'h2h':
             stakes = {'home': bet['home_stake'], 'away': bet['away_stake']}
+            home_link = stakes['home'].get('betting_link', '')
+            away_link = stakes['away'].get('betting_link', '')
+            home_link_text = f" [🔗 Bet Here]({home_link})" if home_link else ""
+            away_link_text = f" [🔗 Bet Here]({away_link})" if away_link else ""
             message = f"""
 {number}) ## 💎 New Head 2 Head Opportunity 💎
 
@@ -162,13 +166,17 @@ class DiscordHandler:
     Local: {bet.get('local_time', time)}
     Status: {bet.get('game_status', '')}
 **Stakes:**
-    *Home:* Stake £{stakes['home']['stake']} with {stakes['home']['bookmaker']} @ {stakes['home']['price']} (American: {stakes['home'].get('american_odds', 'N/A')})
-    *Away:* Stake £{stakes['away']['stake']} with {stakes['away']['bookmaker']} @ {stakes['away']['price']} (American: {stakes['away'].get('american_odds', 'N/A')})
+    *Home:* Stake £{stakes['home']['stake']} with {stakes['home']['bookmaker']} @ {stakes['home']['price']} (American: {stakes['home'].get('american_odds', 'N/A')}){home_link_text}
+    *Away:* Stake £{stakes['away']['stake']} with {stakes['away']['bookmaker']} @ {stakes['away']['price']} (American: {stakes['away'].get('american_odds', 'N/A')}){away_link_text}
 
 for a return of {bet['roi']}%
 """.strip()
         elif bet['type'] == 'totals':
             stakes = {'over': bet['over_stake'], 'under': bet['under_stake']}
+            over_link = stakes['over'].get('betting_link', '')
+            under_link = stakes['under'].get('betting_link', '')
+            over_link_text = f" [🔗 Bet Here]({over_link})" if over_link else ""
+            under_link_text = f" [🔗 Bet Here]({under_link})" if under_link else ""
             message = f"""
 {number}) ## 💎 New Totals Opportunity 💎
 
@@ -182,8 +190,8 @@ for a return of {bet['roi']}%
     Local: {bet.get('local_time', time)}
     Status: {bet.get('game_status', '')}
 **Stakes:**
-    *Over {stakes['over']['point']}:* Stake £{stakes['over']['stake']} with {stakes['over']['bookmaker']} @ {stakes['over']['price']} (American: {stakes['over'].get('american_odds', 'N/A')})
-    *Under {stakes['under']['point']}:* Stake £{stakes['under']['stake']} with {stakes['under']['bookmaker']} @ {stakes['under']['price']} (American: {stakes['under'].get('american_odds', 'N/A')})
+    *Over {stakes['over']['point']}:* Stake £{stakes['over']['stake']} with {stakes['over']['bookmaker']} @ {stakes['over']['price']} (American: {stakes['over'].get('american_odds', 'N/A')}){over_link_text}
+    *Under {stakes['under']['point']}:* Stake £{stakes['under']['stake']} with {stakes['under']['bookmaker']} @ {stakes['under']['price']} (American: {stakes['under'].get('american_odds', 'N/A')}){under_link_text}
 
 for a return of {bet['roi']}%
 """.strip()

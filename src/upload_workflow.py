@@ -1,6 +1,7 @@
 # Handles database and Discord uploading
 
 from lib.networkhandler import APIHandler, DiscordHandler
+from lib.sportsbook_links import add_betting_links_to_arb
 import json
 import csv
 import pytz
@@ -85,7 +86,8 @@ class UploadWorkflow:
                     est_time_str = time_str
                     local_time_str = time_str
                     status = "Unknown"
-                # Format American odds for Discord
+                # Format American odds and add betting links for Discord
+                bet = add_betting_links_to_arb(bet)  # Add betting links
                 for stake_type in ['home_stake', 'away_stake', 'draw_stake', 'over_stake', 'under_stake']:
                     if stake_type in bet:
                         price = bet[stake_type].get('price', None)
