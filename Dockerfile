@@ -31,4 +31,4 @@ RUN chown -R app:app /app
 USER app
 
 # Default command
-CMD ["python", "src/main.py", "--sport", "baseball_mlb"]
+CMD ["python", "src/odds_streaming_producer.py"]
