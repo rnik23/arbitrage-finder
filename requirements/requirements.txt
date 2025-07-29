@@ -8,4 +8,6 @@ beautifulsoup4
 tzlocal
 psycopg2-binary
 schedule
+# Kafka client for streaming ingestion
+kafka-python
 # Add other dependencies below as needed
